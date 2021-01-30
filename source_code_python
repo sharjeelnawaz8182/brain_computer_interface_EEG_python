@@ -1,0 +1,170 @@
+from tkinter import filedialog
+from tkinter import *
+import tkinter.messagebox
+from scipy import signal
+from scipy import fftpack
+from fastdtw import fastdtw
+from scipy.spatial.distance import euclidean
+import numpy as np
+from sklearn.decomposition import KernelPCA
+from sklearn.decomposition import PCA
+import pandas as pd
+from sklearn.manifold import Isomap
+from skimage.feature import match_template
+from sklearn.decomposition import FastICA
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import f_classif
+from sklearn.neighbors import KNeighborsClassifier
+import os
+root =Tk()
+root.geometry("1000x700")
+w =Label(root, text="brain computer interface",font=("Helvetica", 30)).place(x=230, y=10)
+w3 =Label(root, text="please load data",fg="blue",font=("Helvetica", 20)).place(x=80, y=65)
+w1 =Label(root, text="results",fg="blue",font=("Helvetica", 20)).place(x=590, y=65)
+w2 =Label(root, text="number of trial ",fg="purple",font=("Helvetica", 13)).place(x=20, y=330)
+v = StringVar()
+e1 =Entry(root,textvariable=v).place(x=195, y=330,width=120,height=25)
+v2 = StringVar()
+e2 =Text(root ,width=47,height=35)
+e2.grid(row=19,rowspan=4, column=0,columnspan=2,padx=600,pady=110)
+def helloCallBack1():
+    global t_sig
+    t_sig=  filedialog.askopenfilename(initialdir ="/",title ="Select signal file")
+    #t_sig=open(filename).read()
+    #t_sig=np.genfromtxt(filename1,delimiter=',')
+def helloCallBack4():
+    global t_alph
+    t_alph=  filedialog.askopenfilename(initialdir ="/",title ="Select alphabet file")
+    #t_alph=open(filename).read()
+a= tkinter.Button(root, text ="alphabet event",fg="purple",height =5,width =15, command =helloCallBack4).place(x=200, y=220)
+#a.pack()
+def helloCallBack2():
+    global t_ind
+    t_ind=  filedialog.askopenfilename(initialdir ="/",title ="Select index file")
+    #t_ind=open(filename).read()
+c= tkinter.Button(root, text ="index event",fg="purple",height =5,width =15, command = helloCallBack2).place(x=200, y=120)
+#c.pack()
+def helloCallBack3():
+    global t_grp
+    t_grp=  filedialog.askopenfilename(initialdir ="/",title ="Select group no file")
+    #t_grp=open(filename).read(int())
+d = tkinter.Button(root, text ="singnals",fg="purple",height =5,width =15, command = helloCallBack1).place(x=20, y=120)
+ 
+#d.pack()
+
+e= tkinter.Button(root, text ="group event",fg="purple",height =5,width =15, command = helloCallBack3).place(x=20, y=220)
+#e.pack()
+def helloCallBack5():
+    e2.insert(END,'runingg \n ,......')
+    #messagebox.showinfo( "Hello Python", "Hello World")
+    nn=int(v.get())
+    print("value of n="+str(nn))
+    data=np.genfromtxt('sensorsdata.csv',delimiter=',')
+    dat=data.transpose()
+    group=np.genfromtxt('groupname.csv',delimiter=',')
+    alpha=np.genfromtxt('alphafile.csv',delimiter=',')
+    index=np.genfromtxt('index_time.csv',delimiter=',')
+    t_data=np.genfromtxt(t_sig,delimiter=',')
+    t_group=np.genfromtxt(t_grp,delimiter=',')
+    t_alpha=np.genfromtxt(t_alph,delimiter=',')
+    t_index=np.genfromtxt(t_ind,delimiter=',')
+    '''t_data=np.genfromtxt('test_signal.csv',delimiter=',')
+    t_group=np.genfromtxt('test_groupno.csv',delimiter=',')
+    t_alpha=np.genfromtxt('test_alphano.csv',delimiter=',')
+    t_index=np.genfromtxt('test_time.csv',delimiter=',') '''
+    j=0
+    arr=np.zeros((192334,2))
+    corrl=np.zeros((2040,2))
+    for i in range(0,2040):
+        limt=index[i]
+        alph=alpha[i]
+        grop=group[i]
+        for p in range(j,int(limt)):
+            arr[int(p)][0]=grop
+            arr[int(p)][1]=alph
+            j=int(limt)
+    print(arr[192333][0])
+    resul=np.zeros((100,2))
+    new_data1=data[0:192333,:]
+    new_arr=arr[0:192333,-2]
+    a,b=signal.butter(8,0.32,btype='low',analog='False',output='ba')
+    new_data=signal.filtfilt(b,a,new_data1)
+    tst_data=signal.filtfilt(b,a,t_data)
+    transformer = FastICA(n_components=12,algorithm='deflation',whiten=True,max_iter=10)
+    #ica_g = transformer.fit_transform(new_data)
+    #embedding = Isomap(n_components=27)
+    #ica_g = embedding.fit_transform(new_data)
+    #ica_test=embedding.fit_transform(tst_data)
+    #ica_test = transformer.fit_transform(tst_data)
+    #transformer = KernelPCA(n_components=22, kernel='linear')
+    ica_test= transformer.fit_transform(tst_data)
+    ica_g=transformer.fit_transform(new_data)
+    #pca = PCA(n_components=22)
+    #ica_g=pca.fit_transform(new_data)
+    #ica_test=pca.fit_transform(tst_data)
+    bestfeatures = SelectKBest(score_func=f_classif, k=10)
+    bestfeatures.fit(ica_g,new_arr)
+    new_data3=bestfeatures.transform(ica_g)
+    new_arr=arr[0:192333,-2]
+    eve_array=arr[0:192333,:]
+    newarr=arr[0:192333,-1]
+    slect=bestfeatures.get_support()
+    t_data=ica_test[:,slect]
+    #dataf=np.concatenate((new_data,eve_array),axis=1)
+    #narry=new_arr.astype(float)i
+    #conarry=np.append(new_data,narry)
+    # for group 1
+    conc=" "
+    lowr=194700
+    n=0
+    upr=0
+    crct=0
+    incrct=0
+    for q in range(0,nn):
+        upr=t_index[q]
+        corr=match_template(new_data3,t_data[int(lowr):int(upr)])
+        y, x = np.unravel_index(np.argmax(corr),corr.shape)
+        resul[q][0]=t_group[q]
+        resul[q][1]=new_arr[y]
+        op1="trial number"+str(q)
+        if(t_alpha[q]==newarr[y]):
+            crct+=1
+            op2="\n prediction is correcct "+ os.linesep + " alphabet predicted is="+str(newarr[y])+"\n"
+        else:
+            incrct+=1
+            op2="\n prdiction is incorrecct"+ os.linesep + "real alphabet is="+str(t_alpha[q])+" "+ os.linesep + "but predicted is="+str(newarr[y])+"\n"
+        lowr=upr
+        spc="-------------------------------------------------\n"
+        fp=op1+op2+spc
+        print(fp)
+        e2.insert(END,fp)
+    print("done")
+    print(crct)
+    lowr=194700
+    upr=0
+    crct=0
+    incrct=0
+    for q in range(0,nn):
+        upr=t_index[q]
+        corr=match_template(new_data3,t_data[int(lowr):int(upr)])
+        y, x = np.unravel_index(np.argmax(corr),corr.shape)
+        resul[q][0]=t_group[q]
+        resul[q][1]=new_arr[y]
+        op1="trial number"+str(q)
+        if(t_group[q]==new_arr[y]):
+            crct+=1
+            op2="\n prediction is correcct "+ os.linesep + " group predicted is="+str(new_arr[y])+"\n"
+        else:
+            incrct+=1
+            op2="\n prdiction is incorrecct "+ os.linesep + " real group is="+str(t_group[q])+" "+ os.linesep + "but predicted is="+str(new_arr[y])+"\n"
+        lowr=upr
+        spc="-------------------------------------------------\n"
+        fp=op1+op2+spc
+        print(fp)
+        lowr=upr
+        e2.insert(END,fp)
+    print("value of n="+str(n))
+       
+e= tkinter.Button(root, text ="(process)",fg="blue",height =3,width =10,font=("Helvetica",12), command = helloCallBack5).place(x=210, y=380)
+root.mainloop()
+
