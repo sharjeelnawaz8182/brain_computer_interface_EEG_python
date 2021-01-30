@@ -1,0 +1,2 @@
+# brain_computer_interface_EEG_python
+Brain computer interface using EEG signals, this brain computer interface predicts Alphabet on which person looking (by using EEG Signals only). Different preprocessing technics were applied to handle the brain signals.Different machine models were applied on the given data set for the training and testing purpose along with challenge of obtaining better accuracy.
